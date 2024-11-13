@@ -4,4 +4,4 @@ numpy
 matplotlib
 uuid
 scipy
-sklearn
+scikit-learn
