@@ -109,10 +109,6 @@ random_search = RandomizedSearchCV(model, param_distributions=param_dist, n_iter
 random_search.fit(X, y)
 best_model = random_search.best_estimator_
 
-# Simulatie parameters
-a3mteam_wins, a3mteam_draws, a3mteam_losses = 0, 0, 0
-a3mteam_positions = []
-
 # Simulatie uitvoeren als gebruiker op de knop drukt
 if st.button("Start Simulatie"):
     a3mteam_wins, a3mteam_draws, a3mteam_losses = 0, 0, 0
@@ -183,12 +179,6 @@ if st.button("Start Simulatie"):
         
         # Sorteer teams op basis van punten en rangschik
         sorted_teams = sorted(stand.items(), key=lambda x: x[1], reverse=True)
-        
-        # Bepaal de eindpositie van A3MTeam in deze simulatie
-        for rank, (team, points) in enumerate(sorted_teams, start=1):
-            if team == 'a3mteam':
-                a3mteam_positions.append(rank)
-                break
 
 # Resultaten tonen
 
