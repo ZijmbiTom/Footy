@@ -117,9 +117,16 @@ a3mteam_positions = []
 if st.button("Start Simulatie"):
     a3mteam_wins, a3mteam_draws, a3mteam_losses = 0, 0, 0
 
+    # Voeg een progress bar toe
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
     # Simulatie uitvoeren
     for sim_num in range(num_simulaties):
         stand = {team: 0 for team in pd.concat([df['ThuisTeam'], df['UitTeam']]).unique()}
+
+        status_text.text(f"Simulatie {sim_num + 1} van {num_simulaties} is bezig...")
+        progress_bar.progress((sim_num + 1) / num_simulaties)
         
         for _, wedstrijd in df[df['ThuisScore'].isna()].iterrows():
             thuis_team = wedstrijd['ThuisTeam']
