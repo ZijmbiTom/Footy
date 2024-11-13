@@ -6,3 +6,4 @@ uuid
 scipy
 scikit-learn
 openpyxl
+altair
