@@ -6,14 +6,15 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.utils.class_weight import compute_class_weight
 from scipy.stats import randint
 import time
+import matplotlib.pyplot as plt
 
 # Dataset inladen
 file_path = "Uitslagen.xlsx"
 df = pd.read_excel(file_path)
 
 # Streamlit layout instellingen
-st.title("Voetbalwedstrijd Simulatie")
-st.write("Voorspel de resultaten van A3MTeam tegen De Bengels.")
+st.title("Opta A3mteam")
+st.write("Voorspel de resultaten van A3mTeam tegen De Bengels.")
 
 # Aantal simulaties instellen
 num_simulaties = st.slider("Aantal simulaties", min_value=100, max_value=2000, step=100, value=500)
@@ -161,11 +162,20 @@ if st.button("Start Simulatie"):
     resultaten = ['Winst', 'Gelijkspel', 'Verlies']
     a3mteam_resultaten = [a3mteam_wins, a3mteam_draws, a3mteam_losses]
 
-    # Gebruik Streamlit's ingebouwde functie voor het histogram
-    st.bar_chart({
-        "Resultaten": resultaten,
-        "Aantal": a3mteam_resultaten
-    })
+    # Maak het histogram met matplotlib
+    fig, ax = plt.subplots()
+    bars = ax.bar(resultaten, a3mteam_resultaten, color='skyblue')
+    ax.set_xlabel('Resultaat')
+    ax.set_ylabel('Aantal')
+    ax.set_title('Resultaten van A3MTeam tegen De Bengels')
+    
+    # Voeg de waarden boven elke balk toe
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+    
+    # Toon de matplotlib-figuur in Streamlit
+    st.pyplot(fig)
     
     # Aantallen boven de balken toevoegen
     for i, resultaat in enumerate(a3mteam_resultaten):
