@@ -8,7 +8,7 @@ from scipy.stats import randint
 import time
 
 # Dataset inladen
-file_path = r"C:/Users/TomGreeven/OneDrive - Zijm's beheer BV/Documenten/Persoonlijk/Documenten/Footy/Uitslagen.xlsx"
+file_path = "Uitslagen.xlsx"
 df = pd.read_excel(file_path)
 
 # Streamlit layout instellingen
