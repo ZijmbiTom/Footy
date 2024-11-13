@@ -11,6 +11,13 @@ import matplotlib.pyplot as plt
 file_path = "Uitslagen.xlsx"  # Zorg dat dit bestand in dezelfde map staat als je script
 df = pd.read_excel(file_path)
 
+# Streamlit titel
+st.title("Opta A3mteam")
+st.write("Voorspel de resultaten van A3MTeam tegen De Bengels.")
+
+# Instellen aantal simulaties
+num_simulaties = st.slider("Aantal simulaties", min_value=100, max_value=2000, step=100, value=500)
+
 # Normaliseer de teamnamen om problemen met inconsistenties te voorkomen
 df['ThuisTeam'] = df['ThuisTeam'].str.strip().str.lower()
 df['UitTeam'] = df['UitTeam'].str.strip().str.lower()
@@ -103,100 +110,104 @@ random_search.fit(X, y)
 best_model = random_search.best_estimator_
 
 # Simulatie parameters
-num_simulaties = 200
 a3mteam_wins, a3mteam_draws, a3mteam_losses = 0, 0, 0
 a3mteam_positions = []
 
-# Simulatie uitvoeren
-for sim_num in range(num_simulaties):
-    stand = {team: 0 for team in pd.concat([df['ThuisTeam'], df['UitTeam']]).unique()}
-    
-    for _, wedstrijd in df[df['ThuisScore'].isna()].iterrows():
-        thuis_team = wedstrijd['ThuisTeam']
-        uit_team = wedstrijd['UitTeam']
+# Simulatie uitvoeren als gebruiker op de knop drukt
+if st.button("Start Simulatie"):
+    a3mteam_wins, a3mteam_draws, a3mteam_losses = 0, 0, 0
+
+    # Simulatie uitvoeren
+    for sim_num in range(num_simulaties):
+        stand = {team: 0 for team in pd.concat([df['ThuisTeam'], df['UitTeam']]).unique()}
         
-        # Kenmerken van de wedstrijd met willekeurige ruis toegevoegd
-        match_features = pd.DataFrame([[ 
-            wedstrijd['HomeTeam_GoalDiff'] + np.random.normal(0, 0.1),
-            wedstrijd['AwayTeam_GoalDiff'] + np.random.normal(0, 0.1),
-            wedstrijd['HomeTeam_Form'] + np.random.normal(0, 0.1),
-            wedstrijd['AwayTeam_Form'] + np.random.normal(0, 0.1),
-            wedstrijd['HomeTeam_Points'] + np.random.normal(0, 0.1),
-            wedstrijd['AwayTeam_Points'] + np.random.normal(0, 0.1)
-        ]], columns=features)
-        
-        # Voorspelling met waarschijnlijkheden
-        voorspelling_proba = best_model.predict_proba(match_features)[0]
-        
-        # Controleer de volgorde van de klassen in het model
-        class_mapping = best_model.classes_  # Dit is de volgorde van de klassen in predict_proba output
-        # Map de voorspelling naar de volgorde [1, 0, -1]
-        proba_dict = {class_label: prob for class_label, prob in zip(class_mapping, voorspelling_proba)}
-        voorspelling_proba_reordered = [proba_dict.get(1, 0), proba_dict.get(0, 0), proba_dict.get(-1, 0)]
-
-        # Pas de waarschijnlijkheid voor gelijkspel aan zodat deze altijd minimaal 0.01 is
-        if voorspelling_proba_reordered[1] < 0.01:
-            voorspelling_proba_reordered[1] = 0.01  # Stel gelijkspel in op minimaal 0.01
-            # Hernormaliseer de kansen zodat ze optellen tot 1
-            total_prob = sum(voorspelling_proba_reordered)
-            voorspelling_proba_reordered = [p / total_prob for p in voorspelling_proba_reordered]
-
-        # Kies een uitkomst gebaseerd op de aangepaste waarschijnlijkheden
-        voorspelling = np.random.choice([1, 0, -1], p=voorspelling_proba_reordered)
-
-        # Update de stand op basis van de voorspelling
-        if voorspelling == 1:  # Thuisteam wint
-            stand[thuis_team] += 3
-            if thuis_team == 'a3mteam' and uit_team == 'de bengels':
-                a3mteam_wins += 1
-            elif thuis_team == 'de bengels' and uit_team == 'a3mteam':
-                a3mteam_losses += 1
-        elif voorspelling == -1:  # Uitteam wint
-            stand[uit_team] += 3
-            if uit_team == 'a3mteam' and thuis_team == 'de bengels':
-                a3mteam_losses += 1
-        elif voorspelling == 0:  # Gelijkspel
-            stand[thuis_team] += 1
-            stand[uit_team] += 1
-            if (thuis_team == 'a3mteam' and uit_team == 'de bengels') or (thuis_team == 'de bengels' and uit_team == 'a3mteam'):
-                a3mteam_draws += 1
+        for _, wedstrijd in df[df['ThuisScore'].isna()].iterrows():
+            thuis_team = wedstrijd['ThuisTeam']
+            uit_team = wedstrijd['UitTeam']
+            
+            # Kenmerken van de wedstrijd met willekeurige ruis toegevoegd
+            match_features = pd.DataFrame([[
+                wedstrijd['HomeTeam_GoalDiff'] + np.random.normal(0, 0.1),
+                wedstrijd['AwayTeam_GoalDiff'] + np.random.normal(0, 0.1),
+                wedstrijd['HomeTeam_Form'] + np.random.normal(0, 0.1),
+                wedstrijd['AwayTeam_Form'] + np.random.normal(0, 0.1),
+                wedstrijd['HomeTeam_Points'] + np.random.normal(0, 0.1),
+                wedstrijd['AwayTeam_Points'] + np.random.normal(0, 0.1)
+            ]], columns=features)
+            
+            # Voorspelling met waarschijnlijkheden
+            voorspelling_proba = best_model.predict_proba(match_features)[0]
+            
+            # Controleer de volgorde van de klassen in het model
+            class_mapping = best_model.classes_  # Dit is de volgorde van de klassen in predict_proba output
+            # Map de voorspelling naar de volgorde [1, 0, -1]
+            proba_dict = {class_label: prob for class_label, prob in zip(class_mapping, voorspelling_proba)}
+            voorspelling_proba_reordered = [proba_dict.get(1, 0), proba_dict.get(0, 0), proba_dict.get(-1, 0)]
     
-    # Sorteer teams op basis van punten en rangschik
-    sorted_teams = sorted(stand.items(), key=lambda x: x[1], reverse=True)
+            # Pas de waarschijnlijkheid voor gelijkspel aan zodat deze altijd minimaal 0.01 is
+            if voorspelling_proba_reordered[1] < 0.01:
+                voorspelling_proba_reordered[1] = 0.01  # Stel gelijkspel in op minimaal 0.01
+                # Hernormaliseer de kansen zodat ze optellen tot 1
+                total_prob = sum(voorspelling_proba_reordered)
+                voorspelling_proba_reordered = [p / total_prob for p in voorspelling_proba_reordered]
     
-    # Bepaal de eindpositie van A3MTeam in deze simulatie
-    for rank, (team, points) in enumerate(sorted_teams, start=1):
-        if team == 'a3mteam':
-            a3mteam_positions.append(rank)
-            break
+            # Kies een uitkomst gebaseerd op de aangepaste waarschijnlijkheden
+            voorspelling = np.random.choice([1, 0, -1], p=voorspelling_proba_reordered)
+    
+            
+            # Update de stand op basis van de voorspelling
+            if voorspelling == 1:  # Thuisteam wint
+                stand[thuis_team] += 3
+                if thuis_team == 'a3mteam' and uit_team == 'de bengels':
+                    a3mteam_wins += 1
+                elif thuis_team == 'de bengels' and uit_team == 'a3mteam':
+                    a3mteam_losses += 1
+            elif voorspelling == -1:  # Uitteam wint
+                stand[uit_team] += 3
+                if uit_team == 'a3mteam' and thuis_team == 'de bengels':
+                    a3mteam_wins += 1
+                elif uit_team == 'de bengels' and thuis_team == 'a3mteam':
+                    a3mteam_losses += 1
+            elif voorspelling == 0:  # Gelijkspel
+                stand[thuis_team] += 1
+                stand[uit_team] += 1
+                if (thuis_team == 'a3mteam' and uit_team == 'de bengels') or (thuis_team == 'de bengels' and uit_team == 'a3mteam'):
+                    a3mteam_draws += 1
+        
+        # Sorteer teams op basis van punten en rangschik
+        sorted_teams = sorted(stand.items(), key=lambda x: x[1], reverse=True)
+        
+        # Bepaal de eindpositie van A3MTeam in deze simulatie
+        for rank, (team, points) in enumerate(sorted_teams, start=1):
+            if team == 'a3mteam':
+                a3mteam_positions.append(rank)
+                break
 
-# Resultaten analyseren
+# Resultaten tonen
 posities_count = {i: a3mteam_positions.count(i) for i in range(1, len(stand) + 1)}
 
-# Toon de resultaten in Streamlit
-st.write("Eindpositie van A3MTeam over de simulaties:")
+st.subheader("Eindpositie van A3MTeam over de simulaties")
 for positie, count in posities_count.items():
     st.write(f"Positie {positie}: {count} keer")
 
-st.write("\nResultaten van A3MTeam tegen De Bengels over de simulaties:")
+st.subheader("Resultaten van A3MTeam tegen De Bengels over de simulaties")
 st.write(f"Winst: {a3mteam_wins} keer")
 st.write(f"Gelijkspel: {a3mteam_draws} keer")
 st.write(f"Verlies: {a3mteam_losses} keer")
 
-# Histogram van de resultaten van A3MTeam tegen De Bengels
+# Plot resultaten
+fig, ax = plt.subplots()
 resultaten = ['Winst', 'Gelijkspel', 'Verlies']
 a3mteam_resultaten = [a3mteam_wins, a3mteam_draws, a3mteam_losses]
 
-fig, ax = plt.subplots(figsize=(8, 6))
 bars = ax.bar(resultaten, a3mteam_resultaten, color='skyblue')
 ax.set_xlabel('Resultaat')
 ax.set_ylabel('Aantal')
 ax.set_title('Resultaten van A3MTeam tegen De Bengels')
 
-# Voeg de waarden boven elke balk toe
 for bar in bars:
     yval = bar.get_height()
-    ax.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+    ax.text(bar.get_x() + bar.get_width() / 2, yval + 1, int(yval), ha='center', va='bottom')
 
-# Toon het histogram in Streamlit
 st.pyplot(fig)
+
